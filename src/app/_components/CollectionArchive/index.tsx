@@ -11,6 +11,7 @@ import { PageRange } from '../PageRange'
 import { Pagination } from '../Pagination'
 
 import classes from './index.module.scss'
+import { useFilter } from '../../_providers/Filter'
 
 type Result = {
   docs: (Product | string)[]
@@ -38,8 +39,9 @@ export type Props = {
 }
 
 export const CollectionArchive: React.FC<Props> = props => {
+  const { categoryFilters, sort } = useFilter();
+
   const {
-    categories: catsFromProps,
     className,
     limit = 10,
     onResultChange,
@@ -49,35 +51,39 @@ export const CollectionArchive: React.FC<Props> = props => {
     relationTo,
     selectedDocs,
     showPageRange,
-    sort = '-createdAt',
   } = props
 
+  //TODO: REMOVE CODE
+  // const [results, setResults] = useState<Result>({
+  //   docs: (populateBy === 'collection'
+  //     ? populatedDocs
+  //     : populateBy === 'selection'
+  //     ? selectedDocs
+  //     : []
+  //   )?.map(doc => doc.value),
   const [results, setResults] = useState<Result>({
-    docs: (populateBy === 'collection'
-      ? populatedDocs
-      : populateBy === 'selection'
-      ? selectedDocs
-      : []
-    )?.map(doc => doc.value),
+    totalDocs: typeof populatedDocsTotal === 'number' ? populatedDocsTotal : 0,
+    docs: (populatedDocs?.map(doc => doc.value) || []) as [],
+    page: 1,
+    totalPages: 1,
     hasNextPage: false,
     hasPrevPage: false,
-    nextPage: 1,
-    page: 1,
     prevPage: 1,
-    totalDocs: typeof populatedDocsTotal === 'number' ? populatedDocsTotal : 0,
-    totalPages: 1,
+    nextPage: 1,
+    // totalDocs: typeof populatedDocsTotal === 'number' ? populatedDocsTotal : 0,//TODO: REMOVE CODE
   })
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | undefined>(undefined)
   const scrollRef = useRef<HTMLDivElement>(null)
   const hasHydrated = useRef(false)
-  const isRequesting = useRef(false)
+  // const isRequesting = useRef(false) //TODO: REMOVE CODE
   const [page, setPage] = useState(1)
 
-  const categories = (catsFromProps || [])
-    .map(cat => (typeof cat === 'object' ? cat?.id : cat))
-    .join(',')
+  //TODO: REMOVE CODE
+  // const categories = (catsFromProps || [])
+  //   .map(cat => (typeof cat === 'object' ? cat?.id : cat))
+  //   .join(',')
 
   const scrollToRef = useCallback(() => {
     const { current } = scrollRef
@@ -95,115 +101,99 @@ export const CollectionArchive: React.FC<Props> = props => {
   }, [isLoading, scrollToRef, results])
 
   useEffect(() => {
-    let timer: NodeJS.Timeout = null
-
-    if (populateBy === 'collection' && !isRequesting.current) {
-      isRequesting.current = true
-
-      // hydrate the block with fresh content after first render
-      // don't show loader unless the request takes longer than x ms
-      // and don't show it during initial hydration
-      timer = setTimeout(() => {
-        if (hasHydrated.current) {
-          setIsLoading(true)
-        }
-      }, 500)
-
-      const searchQuery = qs.stringify(
-        {
-          depth: 1,
-          limit,
-          page,
-          sort,
-          where: {
-            ...(categories
-              ? {
-                  categories: {
-                    in: categories,
-                  },
-                }
-              : {}),
-          },
-        },
-        { encode: false },
-      )
-
-      const makeRequest = async () => {
-        try {
-          const req = await fetch(
-            `${process.env.NEXT_PUBLIC_SERVER_URL}/api/${relationTo}?${searchQuery}`,
-          )
-
-          const json = await req.json()
-          clearTimeout(timer)
-
-          const { docs } = json as { docs: Product[] }
-
-          if (docs && Array.isArray(docs)) {
-            setResults(json)
-            setIsLoading(false)
-            if (typeof onResultChange === 'function') {
-              onResultChange(json)
-            }
-          }
-        } catch (err) {
-          console.warn(err) // eslint-disable-line no-console
-          setIsLoading(false)
-          setError(`Unable to load "${relationTo} archive" data at this time.`)
-        }
-
-        isRequesting.current = false
-        hasHydrated.current = true
+    // hydrate the block with fresh content after first render
+    // don't show loader unless the request takes longer than x ms
+    // and don't show it during initial hydration
+    const timer: NodeJS.Timeout = setTimeout(() => {
+      if (hasHydrated) {
+        setIsLoading(true)
       }
+    }, 500)
 
-      void makeRequest()
+    const searchQuery = qs.stringify(
+      {
+        sort,
+        where: {
+          ...(categoryFilters && categoryFilters?.length > 0
+            ? {
+                categories: {
+                  in:
+                    typeof categoryFilters === 'string'
+                      ? [categoryFilters]
+                      : categoryFilters.map((cat: string) => cat).join(','),
+                },
+              }
+            : {}),
+        },
+        limit,
+        page,
+        depth: 1,
+      },
+      { encode: false },
+    )
+
+    const makeRequest = async () => {
+      try {
+        const req = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/${relationTo}?${searchQuery}`,
+        )
+        const json = await req.json()
+        clearTimeout(timer)
+        hasHydrated.current = true
+
+        const { docs } = json as { docs: Product[] }
+
+        if (docs && Array.isArray(docs)) {
+          setResults(json)
+          setIsLoading(false)
+          if (typeof onResultChange === 'function') {
+            onResultChange(json)
+          }
+        }
+      } catch (err) {
+        console.warn(err) // eslint-disable-line no-console
+        setIsLoading(false)
+        setError(`Unable to load "${relationTo} archive" data at this time.`)
+      }
     }
+
+    makeRequest()
 
     return () => {
       if (timer) clearTimeout(timer)
     }
-  }, [page, categories, relationTo, onResultChange, sort, limit, populateBy])
+  }, [page, categoryFilters, relationTo, onResultChange, sort, limit]) //TODO: original array had populateBy member
 
   return (
     <div className={[classes.collectionArchive, className].filter(Boolean).join(' ')}>
       <div className={classes.scrollRef} ref={scrollRef} />
-      {!isLoading && error && <Gutter>{error}</Gutter>}
+      {!isLoading && error && <div>{error}</div>}
       <Fragment>
-        {showPageRange !== false && populateBy !== 'selection' && (
-          <Gutter>
-            <div className={classes.pageRange}>
-              <PageRange
-                collection={relationTo}
-                currentPage={results.page}
-                limit={limit}
-                totalDocs={results.totalDocs}
-              />
-            </div>
-          </Gutter>
-        )}
-        <Gutter>
-          <div className={classes.grid}>
-            {results.docs?.map((result, index) => {
-              if (typeof result === 'object' && result !== null) {
-                return (
-                  <div className={classes.column} key={index}>
-                    <Card doc={result} relationTo={relationTo} showCategories />
-                  </div>
-                )
-              }
-
-              return null
-            })}
-          </div>
-          {results.totalPages > 1 && populateBy !== 'selection' && (
-            <Pagination
-              className={classes.pagination}
-              onClick={setPage}
-              page={results.page}
-              totalPages={results.totalPages}
+        {showPageRange !== false && (
+          <div className={classes.pageRange}>
+            <PageRange
+              totalDocs={results.totalDocs}
+              currentPage={results.page}
+              collection={relationTo}
+              limit={limit}
             />
-          )}
-        </Gutter>
+          </div>
+        )}
+
+        <div className={classes.grid}>
+          {results.docs?.map((result, index) => {
+            return <Card relationTo="products" doc={result} showCategories />
+          })}
+        </div>
+
+        {results.totalPages > 1 && (
+          <Pagination
+            className={classes.pagination}
+            page={results.page}
+            totalPages={results.totalPages}
+            onClick={setPage}
+          />
+        )}
       </Fragment>
     </div>
   )
