@@ -3,10 +3,10 @@
 import { ReactNode, SetStateAction, createContext, useContext, useState } from 'react'
 
 interface IContextType {
-    categoryFilters: string[]
-    setCategoryFilters: React.Dispatch<SetStateAction<string[]>>
-    sort: string
-    setSort: React.Dispatch<SetStateAction<string>>
+  categoryFilters: string[]
+  setCategoryFilters: React.Dispatch<SetStateAction<string[]>>
+  sort: string
+  setSort: React.Dispatch<SetStateAction<string>>
 }
 
 export const INITIAL_FILTER_DATA = {
@@ -36,4 +36,4 @@ export const FilterProvider = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-export const useFilter = () => useContext(FilterContext);
+export const useFilter = () => useContext(FilterContext)

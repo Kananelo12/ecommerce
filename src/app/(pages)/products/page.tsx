@@ -11,10 +11,10 @@ import { fetchDocs } from '../../_api/fetchDocs'
 import { HR } from '../../_components/HR'
 
 const Products = async () => {
-    const { isEnabled: isDraftMode } = draftMode();
+    const { isEnabled: isDraftMode } = draftMode()
 
-    let page: Page | null = null;
-    let categories: Category[] | null = null;
+    let page: Page | null = null
+    let categories: Category[] | null = null
 
     try {
         page = await fetchDoc<Page>({
@@ -25,7 +25,7 @@ const Products = async () => {
 
         categories = await fetchDocs<Category>('categories')
     } catch (error) {
-        console.log(error);
+        console.log(error)
     }
 
   return (

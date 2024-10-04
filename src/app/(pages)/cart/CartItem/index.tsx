@@ -14,28 +14,28 @@ const CartItem = ({ product, title, metaImage, qty, addItemToCart }) => {
 
   const decrementQty = () => {
     // if quantity is greater than 1, decrement upon click, else set it to 1
-    const updatedQty = quantity > 1 ? quantity - 1 : 1;
+    const updatedQty = quantity > 1 ? quantity - 1 : 1
     // set the updated quantity
-    setQuantity(updatedQty);
+    setQuantity(updatedQty)
     // update the instance of the items in cart
-    addItemToCart({ product, quantity: Number(updatedQty)});
+    addItemToCart({ product, quantity: Number(updatedQty)})
   }
   const incrementQty = () => {
     // Increment quantity of product with every click
-    const updatedQty = quantity + 1;
+    const updatedQty = quantity + 1
     // set the updated quantity
-    setQuantity(updatedQty);
+    setQuantity(updatedQty)
     // update the instance of the items in cart
-    addItemToCart({ product, quantity: Number(updatedQty)});
+    addItemToCart({ product, quantity: Number(updatedQty)})
   }
   const enterQty = (e: React.ChangeEvent<HTMLInputElement>) => {
     // manual typing of quantity
-    const updatedQty = Number(e.target.value);
+    const updatedQty = Number(e.target.value)
 
     // set the updated quantity
-    setQuantity(updatedQty);
+    setQuantity(updatedQty)
     // update the instance of the items in cart
-    addItemToCart({ product, quantity: Number(updatedQty)});
+    addItemToCart({ product, quantity: Number(updatedQty)})
   }
 
   return (
